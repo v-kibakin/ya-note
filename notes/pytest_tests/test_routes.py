@@ -39,28 +39,21 @@ def test_pages_availability_for_different_users(
 
 
 @pytest.mark.parametrize(
-    # Вторым параметром передаём note_object, 
-    # в котором будет либо фикстура с объектом заметки, либо None.
-    'name, note_object',
+    'name, args',
     (
-        ('notes:detail', lf('note')),
-        ('notes:edit', lf('note')),
-        ('notes:delete', lf('note')),
+        ('notes:detail', lf('slug_for_args')),
+        ('notes:edit', lf('slug_for_args')),
+        ('notes:delete', lf('slug_for_args')),
         ('notes:add', None),
         ('notes:success', None),
         ('notes:list', None),
     ),
 )
-# Передаём в тест анонимный клиент, name проверяемых страниц и note_object:
-def test_redirects(client, name, note_object):
+# Передаём в тест анонимный клиент, name проверяемых страниц и args:
+def test_redirects(client, name, args):
     login_url = reverse('users:login')
-    # Формируем URL в зависимости от того, передан ли объект заметки:
-    if note_object is not None:
-        url = reverse(name, args=(note_object.slug,))
-    else:
-        url = reverse(name)
+    # Теперь не надо писать никаких if и можно обойтись одним выражением.
+    url = reverse(name, args=args)
     expected_url = f'{login_url}?next={url}'
     response = client.get(url)
-    # Ожидаем, что со всех проверяемых страниц анонимный клиент
-    # будет перенаправлен на страницу логина:
     assertRedirects(response, expected_url)
