@@ -4,7 +4,7 @@ from http import HTTPStatus
 from django.urls import reverse
 
 import pytest
-
+from pytest_lazy_fixtures import lf
 
 @pytest.mark.parametrize(
     'name',  # Имя параметра функции.
@@ -18,12 +18,20 @@ def test_pages_availability_for_anonymous_user(client, name):
     assert response.status_code == HTTPStatus.OK
 
 
-# Параметризуем тестирующую функцию:
+@pytest.mark.parametrize(
+    'parametrized_client, expected_status',
+    [
+        (lf('not_author_client'), HTTPStatus.NOT_FOUND),
+        (lf('author_client'), HTTPStatus.OK)
+    ],
+)
 @pytest.mark.parametrize(
     'name',
     ('notes:detail', 'notes:edit', 'notes:delete'),
 )
-def test_pages_availability_for_author(author_client, name, note):
+def test_pages_availability_for_different_users(
+        parametrized_client, name, note, expected_status
+):
     url = reverse(name, args=(note.slug,))
-    response = author_client.get(url)
-    assert response.status_code == HTTPStatus.OK
+    response = parametrized_client.get(url)
+    assert response.status_code == expected_status
